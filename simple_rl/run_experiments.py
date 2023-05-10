@@ -223,7 +223,8 @@ def run_agents_on_mdp(agents,
                         dir_for_plot="results",
                         experiment_name_prefix="",
                         track_success=False,
-                        success_reward=None):
+                        success_reward=None,
+                        seed_per_inst=True):
     '''
     Args:
         agents (list of Agents): See agents/AgentClass.py (and friends).
@@ -280,7 +281,9 @@ def run_agents_on_mdp(agents,
         for instance in range(1, instances + 1):
             print("  Instance " + str(instance) + " of " + str(instances) + ".")
             sys.stdout.flush()
-            run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment, verbose, track_disc_reward, reset_at_terminal=reset_at_terminal)
+            if seed_per_inst:
+                seed = instance
+            run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment, verbose, track_disc_reward, reset_at_terminal=reset_at_terminal, seed=seed)
             if "fixed" in agent.name:
                 break
 
@@ -301,7 +304,7 @@ def run_agents_on_mdp(agents,
 
     experiment.make_plots(open_plot=open_plot)
 
-def run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment=None, verbose=False, track_disc_reward=False, reset_at_terminal=False, resample_at_terminal=False):
+def run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment=None, verbose=False, track_disc_reward=False, reset_at_terminal=False, resample_at_terminal=False, seed=None):
     '''
     Summary:
         Main loop of a single MDP experiment.
@@ -327,7 +330,8 @@ def run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment=None, verbos
             sys.stdout.flush()
 
         # Compute initial state/reward.
-        state = mdp.get_init_state()
+        mdp.reset(seed=seed)
+        state = mdp.get_init_state()    # This is bad. The initial state may change upon resetting the MDP!
         reward = 0
         episode_start_time = time.time()
 
@@ -375,10 +379,10 @@ def run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment=None, verbos
             if next_state.is_terminal():
                 if reset_at_terminal:
                     # Reset the MDP.
+                    mdp.reset(seed=seed)
                     next_state = mdp.get_init_state()
-                    mdp.reset()
                 elif resample_at_terminal and step < steps:
-                    mdp.reset()
+                    mdp.reset(seed=seed)
                     return True, step, value_per_episode
 
             # Update pointer.
@@ -390,7 +394,7 @@ def run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment=None, verbos
             print
 
         # Reset the MDP, tell the agent the episode is over.
-        mdp.reset()
+        mdp.reset(seed=seed)
         agent.end_of_episode()
 
         if verbose:
@@ -444,7 +448,7 @@ def _increment_bar():
     sys.stdout.write("-")
     sys.stdout.flush()
 
-def evaluate_agent(agent, mdp, instances=10, episodes=1, steps=None):
+def evaluate_agent(agent, mdp, instances=10, episodes=1, steps=None, seed=None):
     '''
     Args:
         agent (simple_rl.Agent)
@@ -464,7 +468,7 @@ def evaluate_agent(agent, mdp, instances=10, episodes=1, steps=None):
 
         # Reset the agent.
         agent.reset()
-        mdp.reset()
+        mdp.reset(seed=seed)
         mdp.end_of_instance()
 
     return total / instances

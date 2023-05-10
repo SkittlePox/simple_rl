@@ -41,6 +41,15 @@ class State(Sequence):
             return hash(str(self.data))
         elif self.data.__hash__ is None:
             return hash(tuple(self.data))
+        elif isinstance(self.data, tuple):
+            # if self.data contains a dict, return the hash of the first element of the tuple
+            for item in self.data:
+                if isinstance(item, dict):
+                    if isinstance(self.data[0], dict):
+                        return hash(self.data[0]['image'].tobytes())
+                    else:
+                        return hash(self.data[0])
+            return hash(self.data)
         else:
             return hash(self.data)
 
@@ -49,7 +58,12 @@ class State(Sequence):
 
     def __eq__(self, other):
         if isinstance(other, State):
-            return self.data == other.data
+            if isinstance(self.data, dict): # It's probably a minigrid obs
+                return np.array_equal(self.data['image'], other.data['image']) and self.data['direction'] == other.data['direction']
+            else:
+                print(len(other.data))
+                print(len(self.data))
+                return self.data == other.data
         return False
 
     def __getitem__(self, index):
