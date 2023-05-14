@@ -224,7 +224,8 @@ def run_agents_on_mdp(agents,
                         experiment_name_prefix="",
                         track_success=False,
                         success_reward=None,
-                        seed_per_inst=True):
+                        seed_per_inst=True,
+                        seeds=None):
     '''
     Args:
         agents (list of Agents): See agents/AgentClass.py (and friends).
@@ -278,11 +279,13 @@ def run_agents_on_mdp(agents,
         start = time.time()
 
         # For each instance.
-        for instance in range(1, instances + 1):
+        for instance in range(0, instances):
             print("  Instance " + str(instance) + " of " + str(instances) + ".")
             sys.stdout.flush()
             if seed_per_inst:
                 seed = instance
+            elif seeds is not None:
+                seed = seeds[instance]
             run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment, verbose, track_disc_reward, reset_at_terminal=reset_at_terminal, seed=seed)
             if "fixed" in agent.name:
                 break
