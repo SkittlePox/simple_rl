@@ -85,6 +85,7 @@ class GymMDP(MDP):
             if self.env_seed:
                 print("Got a reset seed but the env already has a seed. Going with reset seed.")
             self.init_state = GymState(self.env.reset(seed=seed)[0])
+            # print("Resetting with seed", seed)
         elif self.env_seed:
             self.init_state = GymState(self.env.reset(seed=self.env_seed)[0])
         else:

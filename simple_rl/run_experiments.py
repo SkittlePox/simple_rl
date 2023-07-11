@@ -283,7 +283,7 @@ def run_agents_on_mdp(agents,
             print("  Instance " + str(instance) + " of " + str(instances) + ".")
             sys.stdout.flush()
             if seed_per_inst:
-                seed = instance
+                seed = instance + 1
             elif seeds is not None:
                 seed = seeds[instance]
             run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment, verbose, track_disc_reward, reset_at_terminal=reset_at_terminal, seed=seed)
@@ -334,6 +334,7 @@ def run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment=None, verbos
 
         # Compute initial state/reward.
         mdp.reset(seed=seed)
+        # print("Resetting MDP", seed)
         state = mdp.get_init_state()    # This is bad. The initial state may change upon resetting the MDP!
         reward = 0
         episode_start_time = time.time()
