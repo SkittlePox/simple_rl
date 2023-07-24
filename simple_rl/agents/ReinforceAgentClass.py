@@ -16,16 +16,16 @@ class ReinforceAgent(PolicyGradientAgent):
     ''' Class for REINFORCE agent, '''
 
     def __init__(self, actions, name=""):
-        raise NotImplementedError("REINFORCE not yet implemented.)
+        raise NotImplementedError("REINFORCE not yet implemented.")
 
     def policy(self, state):
-    	'''
-    	Args:
-    		state (simple_rl.State)
+        '''
+        Args:
+        state (simple_rl.State)
 
-    	Returns:
-    		(str)
-    	'''
+        Returns:
+        	(str)
+        '''
         # Sample from
         return self.actions[np.random.multinomial(1, self.pmf_a_given_s[state].values()).tolist().index(1)]
 
