@@ -97,7 +97,13 @@ def average_data(data, cumulative=False):
 
         # Take the average.
         num_instances = float(len(data[i]))
-        all_instances_sum = np.array(np.array(all_instances).sum(axis=0))
+        if all(len(sublist) == len(all_instances[0]) for sublist in all_instances):
+            all_instances_np_arr = np.array(all_instances)
+        else:
+            # TODO fix this for multiproc :(
+            print("Sublists in `all_instances` have different lengths.")
+            
+        all_instances_sum = np.array(all_instances_np_arr.sum(axis=0))
         try:
             avged = all_instances_sum / num_instances
         except TypeError:
@@ -336,6 +342,9 @@ def make_plots(experiment_dir, experiment_agents, plot_file_name="", cumulative=
 
     # Load the data.
     data = load_data(experiment_dir, experiment_agents) # [alg][instance][episode]
+
+
+    print("Shape of data:", np.shape(data))
 
     # Average the data.
     avg_data = average_data(data, cumulative=cumulative)

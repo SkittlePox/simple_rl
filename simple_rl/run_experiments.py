@@ -23,6 +23,7 @@ import sys
 import copy
 import numpy as np
 from collections import defaultdict
+from multiprocessing import Process, Queue
 
 # Non-standard imports.
 from simple_rl.planning import ValueIteration
@@ -225,7 +226,8 @@ def run_agents_on_mdp(agents,
                         track_success=False,
                         success_reward=None,
                         seed_per_inst=True,
-                        seeds=None):
+                        seeds=None,
+                        multiproc=False):
     '''
     Args:
         agents (list of Agents): See agents/AgentClass.py (and friends).
@@ -278,25 +280,61 @@ def run_agents_on_mdp(agents,
 
         start = time.time()
 
-        # For each instance.
-        for instance in range(0, instances):
-            print("  Instance " + str(instance) + " of " + str(instances) + ".")
-            sys.stdout.flush()
-            if seed_per_inst:
-                seed = instance + 1
-            elif seeds is not None:
-                seed = seeds[instance]
-            run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment, verbose, track_disc_reward, reset_at_terminal=reset_at_terminal, seed=seed)
+        if multiproc:
+            # For each instance.
+            processes = []
+            results_queue = Queue()
+            agents = []
+            agent_i = 0
+
+            for instance in range(0, instances):
+                print("  Instance " + str(instance) + " of " + str(instances) + ".")
+                sys.stdout.flush()
+                if seed_per_inst:
+                    seed = instance + 1
+                elif seeds is not None:
+                    seed = seeds[instance]
+                this_agent = copy.deepcopy(agent)
+                this_mdp = copy.deepcopy(mdp)
+                this_experiment = copy.deepcopy(experiment)
+                p = Process(target=run_single_agent_on_mdp, args=(this_agent, this_mdp, episodes, steps, this_experiment, verbose, track_disc_reward, True, False, seed, results_queue))
+                p.start()
+                processes.append(p)
+                agents.append(this_agent)
+
+            for p in processes:
+                p.join()
+                # experiment.end_of_episode(agents[agent_i])
+                # agent_i += 1
+
+            while not results_queue.empty():
+                result = results_queue.get()
+                # process result here
+
             if "fixed" in agent.name:
                 break
+        else:
+            # For each instance.
+            for instance in range(0, instances):
+                print("  Instance " + str(instance) + " of " + str(instances) + ".")
+                sys.stdout.flush()
+                if seed_per_inst:
+                    seed = instance + 1
+                elif seeds is not None:
+                    seed = seeds[instance]
+                run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment, verbose, track_disc_reward, reset_at_terminal=reset_at_terminal, seed=seed)
+                if "fixed" in agent.name:
+                    break
 
-            # Reset the agent.
-            agent.reset()
-            mdp.end_of_instance()
+                # Reset the agent.
+                agent.reset()
+                mdp.end_of_instance()
+
         # Track how much time this agent took.
         end = time.time()
         time_dict[agent] = round(end - start, 3)
         print()
+
         
 
     # Time stuff.
@@ -307,7 +345,7 @@ def run_agents_on_mdp(agents,
 
     experiment.make_plots(open_plot=open_plot)
 
-def run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment=None, verbose=False, track_disc_reward=False, reset_at_terminal=False, resample_at_terminal=False, seed=None):
+def run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment=None, verbose=False, track_disc_reward=False, reset_at_terminal=False, resample_at_terminal=False, seed=None, results_queue=None):
     '''
     Summary:
         Main loop of a single MDP experiment.
@@ -393,8 +431,11 @@ def run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment=None, verbos
             state = next_state
 
         # Process experiment info at end of episode.
-        if experiment is not None:
+        if experiment is not None and results_queue is None:
             experiment.end_of_episode(agent)
+            print
+        elif experiment is not None:
+            experiment.end_of_episode(agent)    # Probably do something here to get the info back so that we can store it.
             print
 
         # Reset the MDP, tell the agent the episode is over.
@@ -412,7 +453,10 @@ def run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment=None, verbos
     if verbose:
         print("\tLast episode reward:", cumulative_episodic_reward)
 
-    return False, steps, value_per_episode
+    if results_queue:
+        results_queue.put((False, steps, value_per_episode))
+    else:
+        return False, steps, value_per_episode
 
 def run_single_belief_agent_on_pomdp(belief_agent, pomdp, episodes, steps, experiment=None, verbose=False,
                                      track_disc_reward=False, reset_at_terminal=False, resample_at_terminal=False):
