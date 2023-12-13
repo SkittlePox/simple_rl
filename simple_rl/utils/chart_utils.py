@@ -218,6 +218,7 @@ def plot(results, experiment_dir, agents, plot_file_name="", conf_intervals=[], 
         results = [[-x for x in alg] for alg in results]
 
     agent_colors = _get_agent_colors(experiment_dir, agents)
+    agent_colors = {}
 
     # Make the plot.
     print_prefix = "\nAvg. cumulative reward" if cumulative else "Avg. reward"
