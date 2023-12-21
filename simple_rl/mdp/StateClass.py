@@ -59,7 +59,10 @@ class State(Sequence):
     def __eq__(self, other):
         if isinstance(other, State):
             if isinstance(self.data, dict): # It's probably a minigrid obs
-                return np.array_equal(self.data['image'], other.data['image']) and self.data['direction'] == other.data['direction']
+                if 'image' in self.data.keys():
+                    return np.array_equal(self.data['image'], other.data['image']) and self.data['direction'] == other.data['direction']
+                else:   # It's a virtualhome obs
+                    return self.data[0]['nodes'] == other.data[0]['nodes'] and self.data[0]['edges'] == other.data[0]['edges']
             else:
                 print(len(other.data))
                 print(len(self.data))

@@ -377,6 +377,8 @@ def run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment=None, verbos
         reward = 0
         episode_start_time = time.time()
 
+        # print("Simple RL BP 1")
+
         # Extra printing if verbose.
         if verbose:
             print()
@@ -386,12 +388,14 @@ def run_single_agent_on_mdp(agent, mdp, episodes, steps, experiment=None, verbos
         for step in range(1, steps + 1):
             if verbose and int(prog_bar_len*float(step) / steps) > int(prog_bar_len*float(step-1) / steps):
                 _increment_bar()
+                # print(step)
 
             # step time
             step_start = time.time()
 
             # Compute the agent's policy.
             action = agent.act(state, reward)
+            # print("simple_rl action:", action)
 
             # Terminal check.
             if state.is_terminal():
